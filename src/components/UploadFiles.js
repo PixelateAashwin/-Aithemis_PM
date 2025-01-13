@@ -23,8 +23,8 @@ const Upload = () => {
   const { getRootProps, getInputProps } = useDropzone({ onDrop });
 
   return (
-    <div {...getRootProps()} style={{ border: '2px dashed #cccccc', padding: '20px', textAlign: 'center' }}>
-      <input {...getInputProps()} />
+    <div className='m-4 bg-black' {...getRootProps()}>
+      <input className='m-4 bg-black' {...getInputProps()} />
       <p>Drag 'n' drop some files here, or click to select files</p>
     </div>
   );
