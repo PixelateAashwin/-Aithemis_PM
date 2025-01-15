@@ -1,7 +1,7 @@
 import React from 'react';
 
 export function SearchResults({ results, isLoading }) {
-  // Show loading spinner while searching
+  console.log(results);
   if (isLoading) {
     return (
       <div className="text-center py-8">

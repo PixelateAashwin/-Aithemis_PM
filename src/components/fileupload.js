@@ -1,60 +1,68 @@
-import React, { useCallback } from 'react';
-import { Upload } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone'; // Import useDropzone from react-dropzone
+import { uploadFile } from '../services/document';
 
-export function FileUpload({ onFileSelect }) {
-  // Prevent default drag behavior and stop event propagation
-  const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
+export function FileUpload({ onFileUploadComplete }) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Handle file drop event
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const { files } = e.dataTransfer;
-    if (files && files.length > 0) {
-      onFileSelect(files);
-    }
-  }, [onFileSelect]);
+  const handleFileInput = useCallback(
+    async (files) => {
+      setUploading(true);
+      setError(null);
 
-  // Handle file selection through input element
-  const handleFileInput = useCallback((e) => {
-    const { files } = e.target;
-    if (files && files.length > 0) {
-      onFileSelect(files);
-    }
-  }, [onFileSelect]);
+      try {
+        const uploadedFiles = [];
+        for (const file of files) {
+          const result = await uploadFile(file);
+          console.log(result);
+          uploadedFiles.push({
+            id: result.id,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            url: result.url,
+          });
+        }
+        onFileUploadComplete(uploadedFiles);
+      } catch (err) {
+        console.error('Upload error:', err.message);
+        setError('Failed to upload files. Please try again.');
+      } finally {
+        setUploading(false);
+      }
+    },
+    [onFileUploadComplete]
+  );
+
+  // Set up the dropzone
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop: (acceptedFiles) => handleFileInput(acceptedFiles), // Handle dropped files
+    accept: '.pdf,.docx', // Accept only PDF and Word files
+  });
 
   return (
-    // Drag and drop container with visual feedback
     <div
-      className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors"
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
+      {...getRootProps()} // Spread dropzone props to the container
+      className={`border-2 border-dashed ${
+        uploading ? 'border-gray-100' : 'border-gray-300'
+      } rounded-lg p-3 px-4 lg:mr-3 text-center transition-colors`} // Corrected className syntax
     >
-      {/* Hidden file input for traditional file selection */}
       <input
-        type="file"
-        id="fileInput"
-        className="hidden"
-        onChange={handleFileInput}
-        multiple
-        accept=".pdf,.doc,.docx"
+        {...getInputProps()} // Spread input props for file selection
+        className='hidden'
       />
-      {/* Custom styled label acting as the upload button */}
-      <label
-        htmlFor="fileInput"
-        className="cursor-pointer flex flex-col items-center gap-4"
-      >
-        <Upload className="w-12 h-12 text-gray-400" />
+      <label className='cursor-pointer flex flex-col items-center gap-4'>
         <div>
-          <p className="text-lg font-medium text-gray-700">
-            Drag and drop your documents here
+          <p className='text-xs font-medium text-gray-300'>
+            {uploading ? 'Uploading...' : 'Drag and drop your documents here'}
           </p>
-          <p className="text-sm text-gray-500 mt-1">
-            or click to select files (PDF, Word)
-          </p>
+          {!uploading && (
+            <p className='text-xs text-gray-300 mt-1'>
+              or click to select files (PDF, Word)
+            </p>
+          )}
+          {error && <p className='text-red-500 text-sm mt-2'>{error}</p>}
         </div>
       </label>
     </div>
