@@ -36,18 +36,25 @@ export function ChatBox({
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
   const [expandedResults, setExpandedResults] = useState({});
+  const [isProcessing, setIsProcessing] = useState(false); // Add processing state
 
-  const handleSend = () => {
+  console.log(isProcessing);
+  const handleSend = async () => {
     if (input.trim()) {
-      onSendMessage(input);
+      setIsProcessing(true); // Show loader while processing
+      await onSendMessage(input);
       setInput('');
+      setIsProcessing(false);
     }
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
+      setIsProcessing(true);
       handleSend();
+
+
     }
   };
 
@@ -55,7 +62,8 @@ export function ChatBox({
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+   
+  }, [messages, isProcessing]); // Add isProcessing to dependencies
 
   const renderMessage = (msg, index) => {
     const isUser = msg.role === 'user';
@@ -89,6 +97,8 @@ export function ChatBox({
                 </div>
               )}
 
+              {/* Show processing message if isProcessing is true */}
+             
               {msg.content && <div className=''>{msg.content}</div>}
 
               {msg.results &&
@@ -96,7 +106,7 @@ export function ChatBox({
                 msg.results.length > 0 && (
                   <div className='space-y-2'>
                     {msg.results
-                      .sort((a, b) => b.score - a.score) // Sort by score descending
+                      .sort((a, b) => b.score - a.score)
                       .map((result, idx) => (
                         <SearchResult
                           key={idx}
@@ -125,10 +135,17 @@ export function ChatBox({
           onDelete={onDelete}
         />
         <div className='space-y-4'>{messages?.map(renderMessage)}</div>
+        
+        
+        
         <div ref={messagesEndRef} />
       </div>
 
       <div className='p-4 bg-[#2f2f2f] flex items-center space-x-2 mt-auto rounded-b-lg'>
+      {isProcessing && (
+                <div className="text-gray-400">Processing your chat...</div>
+              )}
+
         <textarea
           className='flex-1 bg-[#2f2f2f] text-gray-100 rounded-lg px-2 py-2 focus:outline-none resize-none'
           placeholder='Type your message here...'
