@@ -5,17 +5,19 @@ import { DocumentList } from './DocumentList';
 const SearchResult = ({ result, onShowMore }) => (
   <div className='bg-[#2f2f2f] rounded-lg p-4 mb-2'>
     <div className='text-sm text-gray-400 mb-2 flex justify-between'>
-      <span>Page {result.metadata.page + 1}</span>
-      <span>Match Score: {(result.score * 100).toFixed(1)}%</span>
+      <span>Match Score: {(result?.score * 100).toFixed(1)}%</span>
+      <br />
+      <span>File: {result?.metadata?.name}</span>
     </div>
 
-    {/* Show snippet if available, otherwise show full content */}
     <div className='text-gray-100 whitespace-pre-wrap'>
-      {result.isExpanded ? result.content : result.snippet || result.content}
+      {result?.isExpanded
+        ? result?.content
+        : result?.snippet || result?.content}
     </div>
 
     {/* Show "Show more" button if there's a snippet */}
-    {result.snippet && result.snippet !== result.content && (
+    {result?.snippet && result?.snippet !== result?.content && (
       <button
         className='text-blue-400 text-sm mt-2 hover:text-blue-300'
         onClick={onShowMore}
@@ -36,12 +38,11 @@ export function ChatBox({
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
   const [expandedResults, setExpandedResults] = useState({});
-  const [isProcessing, setIsProcessing] = useState(false); // Add processing state
-
-  console.log(isProcessing);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [dots, setDots] = useState('');
   const handleSend = async () => {
     if (input.trim()) {
-      setIsProcessing(true); // Show loader while processing
+      setIsProcessing(true);
       await onSendMessage(input);
       setInput('');
       setIsProcessing(false);
@@ -53,17 +54,24 @@ export function ChatBox({
       e.preventDefault();
       setIsProcessing(true);
       handleSend();
-
-
     }
   };
+
+  useEffect(() => {
+    if (!isProcessing) return;
+
+    const interval = setInterval(() => {
+      setDots((prev) => (prev.length < 3 ? prev + '.' : ''));
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [isProcessing]);
 
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-   
-  }, [messages, isProcessing]); // Add isProcessing to dependencies
+  }, [messages, isProcessing]);
 
   const renderMessage = (msg, index) => {
     const isUser = msg.role === 'user';
@@ -98,7 +106,7 @@ export function ChatBox({
               )}
 
               {/* Show processing message if isProcessing is true */}
-             
+
               {msg.content && <div className=''>{msg.content}</div>}
 
               {msg.results &&
@@ -135,17 +143,16 @@ export function ChatBox({
           onDelete={onDelete}
         />
         <div className='space-y-4'>{messages?.map(renderMessage)}</div>
-        
-        
-        
+
         <div ref={messagesEndRef} />
+        {isProcessing && (
+          <div className='text-gray-100 mt-2 w-fit px-4 p-2 rounded-lg bg-[#2f2f2f]'>
+            Processing your query{dots}
+          </div>
+        )}
       </div>
 
       <div className='p-4 bg-[#2f2f2f] flex items-center space-x-2 mt-auto rounded-b-lg'>
-      {isProcessing && (
-                <div className="text-gray-400">Processing your chat...</div>
-              )}
-
         <textarea
           className='flex-1 bg-[#2f2f2f] text-gray-100 rounded-lg px-2 py-2 focus:outline-none resize-none'
           placeholder='Type your message here...'

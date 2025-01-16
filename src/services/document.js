@@ -14,7 +14,6 @@ const api = axios.create({
 
 // Upload file
 export async function uploadFile(file) {
-  console.log(file);
   const formData = new FormData();
   formData.append('file', file);
 
@@ -24,9 +23,6 @@ export async function uploadFile(file) {
         'Content-Type': 'multipart/form-data',
       },
     });
-
-    // Return uploaded file metadata including the Supabase public URL
-    console.log(response);
     return response.data.data;
   } catch (error) {
     console.error('Error uploading file:', error.response || error);
@@ -57,14 +53,12 @@ export async function deleteDocument(documentId) {
   }
 }
 
-// Search documents
-export async function searchDocuments(query) {
-  console.log(query);
+export async function searchDocuments(query, documentIds) {
   try {
-    const response = await api.post('/search', { query });
-    console.log(response);
+    const response = await api.post('/search', { query, documentIds });
+
     return {
-      results: response.data.data,
+      results: response.data.data.results,
       totalResults: response.data.data.results.length,
     };
   } catch (error) {

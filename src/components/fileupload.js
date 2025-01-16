@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useDropzone } from 'react-dropzone'; // Import useDropzone from react-dropzone
+import { useDropzone } from 'react-dropzone';
 import { uploadFile } from '../services/document';
 
 export function FileUpload({ onFileUploadComplete }) {
@@ -14,15 +14,23 @@ export function FileUpload({ onFileUploadComplete }) {
       try {
         const uploadedFiles = [];
         for (const file of files) {
-          const result = await uploadFile(file);
-          console.log(result);
-          uploadedFiles.push({
-            id: result.id,
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            url: result.url,
-          });
+          if (
+            file.type === 'application/pdf' ||
+            file.type ===
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          ) {
+            const result = await uploadFile(file);
+            uploadedFiles.push({
+              id: result.id,
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              url: result.url,
+            });
+          } else {
+            setError('Only PDF and Word documents are allowed');
+            return;
+          }
         }
         onFileUploadComplete(uploadedFiles);
       } catch (err) {
@@ -37,8 +45,8 @@ export function FileUpload({ onFileUploadComplete }) {
 
   // Set up the dropzone
   const { getRootProps, getInputProps } = useDropzone({
-    onDrop: (acceptedFiles) => handleFileInput(acceptedFiles), // Handle dropped files
-    accept: '.pdf,.docx', // Accept only PDF and Word files
+    onDrop: (acceptedFiles) => handleFileInput(acceptedFiles),
+    accept: '.pdf,.docx',
   });
 
   return (

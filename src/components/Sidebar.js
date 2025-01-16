@@ -1,7 +1,12 @@
 import React from 'react';
 import { Trash2, Eye } from 'lucide-react';
 
-export function Sidebar({ documents, onDelete, onClearHistory }) {
+export function Sidebar({
+  documents,
+  onDelete,
+  onClearHistory,
+  onUseDocument,
+}) {
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -11,13 +16,13 @@ export function Sidebar({ documents, onDelete, onClearHistory }) {
   };
 
   return (
-    <div className='w-1/4 h-full lg:flex hidden bg-[#171717] p-4  flex-col space-y-4'>
+    <div className='w-1/4 h-full lg:flex hidden bg-[#171717] p-4 flex-col space-y-4'>
       <h2 className='text-lg font-medium'>Document History</h2>
       <div className='flex-grow overflow-y-scroll hide-scrollbar space-y-2'>
         {documents.map((doc) => (
           <div
             key={doc.id}
-            className='bg-[#2f2f2f] rounded-lg shadow p-2  px-3 flex items-center justify-between'
+            className='bg-[#2f2f2f] rounded-lg shadow p-2 px-3 flex items-center justify-between'
           >
             <div className='flex items-center space-x-4'>
               <div>
@@ -27,7 +32,10 @@ export function Sidebar({ documents, onDelete, onClearHistory }) {
                     : doc.name}
                 </h3>
                 <p className='text-xs mt-1 text-gray-500'>
-                  {formatFileSize(doc.size)} • {doc.type.toUpperCase()}
+                  {formatFileSize(doc.size)} •{' '}
+                  {doc.type.trim().toUpperCase().length > 25
+                    ? `${doc.type.trim().toUpperCase().slice(0, 10)}...`
+                    : doc.type.trim().toUpperCase()}
                 </p>
               </div>
             </div>
@@ -48,13 +56,20 @@ export function Sidebar({ documents, onDelete, onClearHistory }) {
               >
                 <Trash2 className='w-5 h-5' />
               </button>
+              <button
+                onClick={() => onUseDocument(doc)}
+                className='p-2 text-gray-400 hover:text-green-500 transition-colors'
+                aria-label='Use document'
+              >
+                Use
+              </button>
             </div>
           </div>
         ))}
       </div>
       <button
         onClick={onClearHistory}
-        className=' bg-[#282828]  text-white px-3 py-1 rounded-lg hover:bg-red-600 transition'
+        className='bg-[#282828] text-white px-3 py-1 rounded-lg hover:bg-red-600 transition'
       >
         Clear History
       </button>

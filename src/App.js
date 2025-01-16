@@ -6,8 +6,8 @@ import { deleteDocument, fetchDocuments } from './services/document';
 import { searchDocuments } from './services/document';
 
 function App() {
-  const [documents, setDocuments] = useState([]); // Current session documents
-  const [historyDocuments, setHistoryDocuments] = useState([]); // Reference history documents
+  const [documents, setDocuments] = useState([]);
+  const [historyDocuments, setHistoryDocuments] = useState([]);
   const [messages, setMessages] = useState([]);
   const [deleting, setDeleting] = useState(null);
 
@@ -48,22 +48,21 @@ function App() {
       console.error('Error handling file upload:', error);
     }
   };
+
+  const handleUseDocument = (document) => {
+    document.id = document._id;
+    setDocuments([document, ...documents]);
+  };
+
   const handleDeleteDocument = async (id) => {
     setDeleting(id);
     try {
-      // Call the API to delete the document
       await deleteDocument(id);
-
-      // Update the current session documents
       setDocuments((prev) => prev.filter((doc) => doc.id !== id));
-
-      // Update the history documents
       const updatedHistoryDocuments = historyDocuments.filter(
         (doc) => doc.id !== id
       );
       setHistoryDocuments(updatedHistoryDocuments);
-
-      // Update localStorage
       const updatedIds = updatedHistoryDocuments.map((doc) => doc.id);
       updateLocalStorage(updatedIds);
     } catch (error) {
@@ -83,20 +82,6 @@ function App() {
     }
   };
 
-  const handleClearSingleDocument = (id) => {
-    try {
-      const updatedHistoryDocuments = historyDocuments.filter(
-        (doc) => doc.id !== id
-      );
-      setHistoryDocuments(updatedHistoryDocuments);
-
-      const updatedIds = updatedHistoryDocuments.map((doc) => doc.id);
-      updateLocalStorage(updatedIds);
-    } catch (error) {
-      console.error('Error clearing single document from history:', error);
-    }
-  };
-
   const handleSendMessage = async (message) => {
     if (!documents.length) {
       setMessages((prev) => [
@@ -107,18 +92,26 @@ function App() {
     }
 
     setMessages((prev) => [...prev, { role: 'user', content: message }]);
-
     try {
-      const response = await searchDocuments(message);
-      console.log('Search results:', response.results.results);
+      const documentIds = documents.map((doc) => doc.id);
+      const response = await searchDocuments(message, documentIds);
+      console.log(response.results);
+      const allMatches = response.results.flatMap((result) =>
+        result.matches.map((match) => ({
+          page: match.page,
+          score: match.score,
+          content: match.content,
+          metadata: match.metadata,
+        }))
+      );
 
       setMessages((prev) => [
         ...prev,
         {
           role: 'bot',
           content: 'Here are the relevant results:',
-          totalResults: response.results.results.length,
-          results: response.results.results, 
+          totalResults: allMatches.length,
+          results: allMatches,
         },
       ]);
     } catch (error) {
@@ -133,9 +126,11 @@ function App() {
   return (
     <div className='h-screen flex bg-[#212121] text-gray-100'>
       <Sidebar
+        setDocuments={setDocuments}
         documents={historyDocuments}
-        onDelete={handleClearSingleDocument}
+        onDelete={handleDeleteDocument}
         onClearHistory={handleClearHistory}
+        onUseDocument={handleUseDocument} // Pass the handler
       />
       <div className='flex mx-2 flex-col flex-grow items-center'>
         <div className='flex w-full shadow flex-col'>
